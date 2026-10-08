@@ -1,0 +1,9 @@
+*-----------------------------------------------------------------------------
+*** 9.4 boundary condition on SOL-CORE interface
+***   0: local zero-flux for all Z
+***   1: surface-average zero-flux for all Z
+***  >1: coupled with 1D core model (number of radii)
+***   R_eff     Ne        TE        D       V
+0  
+*      0.   1.E13       500.      1.E4     0.
+*     50.   1.E13       500.      1.E4     0.

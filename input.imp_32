@@ -1,0 +1,22 @@
+** 9.3 impurity sources       
+* 18.03.2013 -> two types of impurity neutral sources
+*              
+* 1) Intrinsic: physical, chemical and self sputtering
+*               here, self sputtering has also the meaing of reflection
+*                (at present for given coefficients)
+*                 fluid: RANDF <   chem  => sputtered
+*               neutral: RANDF <= |chem| => sputtered
+*              Impurity neutrals started with E0 with angle function of
+*              F(theta)=sin(theta)**alpha*cos(theta)**beta 
+*                alpha=1, beta=0: uniform distribution
+*                alpha=1, beta=1: cosine  distribution
+P_SPUT C_SPUT S_SPUT  ! physical, chemical, self sputtering
+E_SPUT    SIN    COS  ! E0, Alpha, Beta
+* 2) External points source
+*              Alpha=1 default for this case, beta(>=0) must be given here
+*              Further inputs:
+*              E0 in eV:   energy
+*              Strength in A: Flux
+*              R,Z, Phi in cm and deg.: location
+*              VR, VZ, VPHI: normalized, injection direction
+*              IF VR=VZ=VPHI=0.: isotropic, same as beta=0

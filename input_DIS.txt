@@ -1,0 +1,28 @@
+% dust radius [m]
+5e-6
+% dust material. Implemented: Li, B, C, BN, B4C
+B
+% initial position x0 [R Z phi], m, phi in rad
+1.566  0.215     0
+% initial velocity v0 [vR vZ vphi], m/s
+0 -5 0
+% NKU for turbulent fluctuations; default 0
+0
+% phi_or_t for varying initial condition 1=toroidal angle 2=time 3=both 4=velocity direction randomization
+2
+% file and path to background plasma %/Users/fnespoli/scripts/DIS/plasma_background/LHD/160035_pbg_EMC3_wC_1.mat
+/Users/fnespoli/DIS_release/plasma_background/TK3X_pbg.mat
+% folder for storing temporary files
+/Users/fnespoli/run_dis/temp/
+% folder for storing final files
+/Users/fnespoli/run_dis/final/
+% output file name
+circular_test
+% file for wall (optional, otherwise write NO)
+/Users/fnespoli/DIS_release/plasma_background/circ_wall.dat
+% injection mass rate [kg/s] (optional, otherwise write NO)
+NO
+%switches to turn on/off forces and currents: neutrals, impurities
+0 0 
+% main plasma ion (H, D)
+D

@@ -1,0 +1,40 @@
+*** 9 Additial inputs for impurity transport                 
+*-----------------------------------------------------------------------------
+* 18.03.2013: Extension to multi impurity species
+* Each impurity species specified in the ion sepcies table in input.par needs 
+* own IMPUT.IMP_I file where the last integer I is the inpurity sepcies index.
+* For example, if there are C and Fe two impurities listed in input.par with
+* index 2 and 3, respectively, two input files, i.e. INPUT.IMP_2 and INPUT.IMP_3
+* must be prepared for C and Fe separately.
+*-----------------------------------------------------------------------------
+** 9.1 Transport model
+* default IMPUTRIY_MOD=0: no impuries, neither transport no radiation
+*                     <0: Coronal Equilibrium for radiation in ENERGY
+*                      1: trace impurity fluid -- present version
+*                      2: kinetic model to be developed
+*                      3: coupled with other codes (not yet available)
+1   
+** 9.2 atomic-process Database
+*STRAHL, ADAS, USER(not yet available) 
+*---------1.  STRAHL ------------------------------------------
+* In case of using STRAHL database, you need simply to put the| 
+* keyword 'STRAHL' bellow. At the same time, the file 'STRAHL'|
+* containing the atomic data must be provided.                |
+*---------2. ADAS ---------------------------------------------
+* Data block structure for using ADAS                         |
+* ADAS      ! keyword                                         |
+* NFILE     ! totoal number of adas data files                |
+* PATH&files, where a class name like 'scd','acd' .... must   |
+* appear at least once for classifying the preocesses.        |
+* for example:                                                |
+* ADAS      ! Call ADAS database                              | 
+* 3         ! 3 totoal processes                              |
+*/afs/ipp/u/adas/adas/adf11/scd96/scd96_c.dat                 |
+*/afs/ipp/u/adas/adas/adf11/acd96/acd96_c.dat                 |
+*/afs/ipp/u/adas/adas/adf11/plt96/plt96_c.dat                 |
+*---------3. USER supplied ------------------------------------
+* USER (not yet available                                     |
+*--------------------------------------------------------------
+*STRAHL
+ADAS      ! Call ADAS database                              | 
+4         ! 4 totoal processes                              |

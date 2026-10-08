@@ -1,0 +1,124 @@
+*** 9 Additial inputs for impurity transport                 
+*-----------------------------------------------------------------------------
+* 18.03.2013: Extension to multi impurity species
+* Each impurity species specified in the ion sepcies table in input.par needs 
+* own IMPUT.IMP_I file where the last integer I is the inpurity sepcies index.
+* For example, if there are C and Fe two impurities listed in input.par with
+* index 2 and 3, respectively, two input files, i.e. INPUT.IMP_2 and INPUT.IMP_3
+* must be prepared for C and Fe separately.
+*-----------------------------------------------------------------------------
+** 9.1 Transport model
+* default IMPUTRIY_MOD=0: no impuries, neither transport no radiation
+*                     <0: Coronal Equilibrium for radiation in ENERGY
+*                      1: trace impurity fluid -- present version
+*                      2: kinetic model to be developed
+*                      3: coupled with other codes (not yet available)
+1   
+** 9.2 atomic-process Database
+*STRAHL, ADAS, USER(not yet available) 
+*---------1.  STRAHL ------------------------------------------
+* In case of using STRAHL database, you need simply to put the| 
+* keyword 'STRAHL' bellow. At the same time, the file 'STRAHL'|
+* containing the atomic data must be provided.                |
+*---------2. ADAS ---------------------------------------------
+* Data block structure for using ADAS                         |
+* ADAS      ! keyword                                         |
+* NFILE     ! totoal number of adas data files                |
+* PATH&files, where a class name like 'scd','acd' .... must   |
+* appear at least once for classifying the preocesses.        |
+* for example:                                                |
+* ADAS      ! Call ADAS database                              | 
+* 3         ! 3 totoal processes                              |
+*/afs/ipp/u/adas/adas/adf11/scd96/scd96_c.dat                 |
+*/afs/ipp/u/adas/adas/adf11/acd96/acd96_c.dat                 |
+*/afs/ipp/u/adas/adas/adf11/plt96/plt96_c.dat                 |
+*---------3. USER supplied ------------------------------------
+* USER (not yet available                                     |
+*--------------------------------------------------------------
+*STRAHL
+ADAS      ! Call ADAS database                              | 
+4         ! 4 totoal processes                              |
+*scd96_he.dat
+*acd96_he.dat
+*plt96_he.dat
+*prb96_he.dat
+*scd96_li.dat
+*acd96_li.dat
+*plt96_li.dat
+*prb96_li.dat
+*scd96_be.dat
+*acd96_be.dat
+*plt96_be.dat
+*prb96_be.dat
+scd89_b.dat
+acd89_b.dat
+plt89_b.dat
+prb89_b.dat
+*scd96_c.dat
+*acd96_c.dat
+*plt96_c.dat
+*prb96_c.dat
+*scd96_n.dat
+*acd96_n.dat
+*plt96_n.dat
+*prb96_n.dat
+*scd96_o.dat
+*acd96_o.dat
+*plt96_o.dat
+*prb96_o.dat
+*scd96_ne.dat
+*acd96_ne.dat
+*plt96_ne.dat
+*prb96_ne.dat
+*scd96_si.dat
+*acd96_si.dat
+*plt96_si.dat
+*prb96_si.dat
+*scd89_ge.dat
+*acd89_ge.dat
+*plt89_ge.dat
+*prb89_ge.dat
+*scd93_fe.dat
+*acd93_fe.dat
+*plt89_fe.dat
+*prb89_fe.dat
+*scd50_w.dat
+*acd50_w.dat
+*plt50_w.dat
+*prb50_w.dat
+** 9.3 impurity sources       
+* 18.03.2013 -> two types of impurity neutral sources
+*              
+* 1) Intrinsic: physical, chemical and self sputtering
+*               here, self sputtering has also the meaing of reflection
+*                (at present for given coefficients)
+*                 fluid: RANDF <   chem  => sputtered
+*               neutral: RANDF <= |chem| => sputtered
+*              Impurity neutrals started with E0 with angle function of
+*              F(theta)=sin(theta)**alpha*cos(theta)**beta 
+*                alpha=1, beta=0: uniform distribution
+*                alpha=1, beta=1: cosine  distribution
+P_SPUT C_SPUT S_SPUT  ! physical, chemical, self sputtering
+E_SPUT    SIN    COS  ! E0, Alpha, Beta
+* 2) External points source
+*              Alpha=1 default for this case, beta(>=0) must be given here
+*              Further inputs:
+*              E0 in eV:   energy
+*              Strength in A: Flux
+*              R,Z, Phi in cm and deg.: location
+*              VR, VZ, VPHI: normalized, injection direction
+*              IF VR=VZ=VPHI=0.: isotropic, same as beta=0
+10524       0    ! total points,beta
+* E0(ev),Strength(A), R(cm),Z(cm),PHI(Deg), VR, VZ, VPHI(relative)
+* 0.1       1.     552.600  102.805 0.01  0.    0.   0.
+*5.          1.    100015.0005 0.   7.e-3     0.    0.   0.
+0.356 0.043408 345.08 82.239 29.742 0 0 0
+*-----------------------------------------------------------------------------
+*** 9.4 boundary condition on SOL-CORE interface
+***   0: local zero-flux for all Z
+***   1: surface-average zero-flux for all Z
+***  >1: coupled with 1D core model (number of radii)
+***   R_eff     Ne        TE        D       V
+0  
+*      0.   1.E13       500.      1.E4     0.
+*     50.   1.E13       500.      1.E4     0.
