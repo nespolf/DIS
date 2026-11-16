@@ -1,4 +1,4 @@
-function dydt=eqmotZ(t,y,Ni,M,k,mu,Ti,chi,lnLambda,kg,Te,E,kE,A,Zi,Nn,Tn,Mn,mami)
+function dydt=eqmotZ(t,y,Ni,M,k,mu,Ti,chi,lnLambda,kg,Te,E,kE,A,Zi,Nn,Tn,Mn,mami,qw)
 dydt=NaN.*y;
 dydt(1:length(y)/2)=y(length(y)/2+1:end);
 %dydt(length(y)/2+1:length(y))=1./mu.*(zeta_drag(abs(M-y(length(y)/2+1:end)).*sqrt(1./tau),chi,tau,lnLambda).*pi.*mu.^(2/3).*k.*nd.*(M-y(length(y)/2+1:end)).*sqrt(tau)+...
@@ -10,4 +10,5 @@ end
 dydt(length(y)/2+1:length(y))=1./mu.*(F+...
        zeta_drag_n(abs(Mn-y(length(y)/2+1:end))./sqrt(Tn./mami)).*pi.*mu.^(2/3).*k.*mami.*Nn.*(Mn-y(length(y)/2+1:end)).*sqrt(Tn./mami)+...
     -chi.*Te.*mu.^(1/3).*E.*kE)-kg;
+    %qw/(4*pi*epsilon0)
 end

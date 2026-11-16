@@ -4,13 +4,13 @@ qe=1.6022e-19;
 E0=0.356; %eV
 NA=6.02e23;
 for i=1:size(Mu,1)
-    Muend(i)=nanmin(Mu(i,:));
+    Muend(i)=min(Mu(i,:), [], 'omitnan');
 end
 
 if isempty(massrate)
-    NAS=NAS./nansum(nansum(NAS))/1000;% normalized to 1 mA total
+    NAS=NAS./sum(sum(NAS, [], 'omitnan'), [], 'omitnan')/1000;% normalized to 1 mA total
 else
-    NAS=NAS./nansum(nansum(NAS)).*massrate/(A.*1e-3)*NA*qe.*(length(Muend)-sum(Muend))./length(Muend); %A*1e-3 molar mass in kg
+    NAS=NAS./sum(sum(NAS, [], 'omitnan'), [], 'omitnan').*massrate/(A.*1e-3)*NA*qe.*(length(Muend)-sum(Muend))./length(Muend); %A*1e-3 molar mass in kg
 end
 dN=100;
 Ntot=round(size(NAS,2)./dN);

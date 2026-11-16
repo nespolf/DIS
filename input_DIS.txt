@@ -11,18 +11,18 @@ B
 % phi_or_t for varying initial condition 1=toroidal angle 2=time 3=both 4=velocity direction randomization
 2
 % file and path to background plasma %/Users/fnespoli/scripts/DIS/plasma_background/LHD/160035_pbg_EMC3_wC_1.mat
-/Users/fnespoli/DIS_release/plasma_background/TK3X_pbg.mat
+/home/AI289520/DIS_CODE/DIS/plasma_background/TK3X_pbg.mat
 % folder for storing temporary files
-/Users/fnespoli/run_dis/temp/
+/home/AI289520/DIS_CODE/run_dis/temp/
 % folder for storing final files
-/Users/fnespoli/run_dis/final/
+/home/AI289520/DIS_CODE/run_dis/final/
 % output file name
 circular_test
 % file for wall (optional, otherwise write NO)
-/Users/fnespoli/DIS_release/plasma_background/circ_wall.dat
+/home/AI289520/DIS_CODE/DIS/DIS_release/plasma_background/circ_wall.dat
 % injection mass rate [kg/s] (optional, otherwise write NO)
 NO
 %switches to turn on/off forces and currents: neutrals, impurities
-0 0 
+0 0
 % main plasma ion (H, D)
 D

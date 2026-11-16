@@ -1,28 +1,36 @@
 % open source release September 2026
+disp('*******************************************')
+disp('*******************************************')
+disp('DIS starts running')
+disp('-------------------------------------------')
+disp('-------------------------------------------')
 try
     %initialization
     clear all
     test=0;
-    if test  mainfolder='/Users/fnespoli/DIS_release/';
-                 inputfile='/Users/fnespoli/DIS_release/input_DIS.txt';
-    else mainfolder='/p/emc3-eirene/fnespoli/DIS/'; inputfile='input.txt'
+    if test  mainfolder='/home/AI289520/DIS_CODE/DIS/'; inputfile='input_DIS.txt';
+    else mainfolder='/home/AI289520/DIS_CODE/DIS/'; inputfile='input.txt';
+    disp('Uploading the input data...')
+    disp(['The input file is: ',mainfolder,inputfile])
     end
     
+    %Give access to all the functions in the mainfolder
     addpath(mainfolder)
+    
+    %Launching the clock
     tic;
 
-
+    %Getting all the data from the input file
     FID = fopen(inputfile);
     data = textscan(FID,'%s','delimiter','\n');
-    a= string(data{:});
+    a= data{1}{:};
     fclose(FID);
-    
-    rd=str2num(a(2));
+    rd=str2num(data{1}{2});
     material=data{1}{4};
-    x0i=str2num(a(6));
-    v0i=str2num(a(8));
-    NKU=str2num(a(10));
-    phi_or_t=str2num(a(12));
+    x0i=str2num(data{1}{6});
+    v0i=str2num(data{1}{8});
+    NKU=str2num(data{1}{10});
+    phi_or_t=str2num(data{1}{12});
     if length(phi_or_t)>1 
         alpha_0=phi_or_t(2); phi_or_t=phi_or_t(1); 
         disp(['randomized velocity with std of ',num2str(alpha_0),' deg'])
@@ -32,24 +40,28 @@ try
     folder1=data{1}{16};
     folder2=data{1}{18};
     fname0=data{1}{20};
-    fname0=[fname0,'_',material,'_',num2str(rd),'m'];
+    xi=round(sqrt(x0i(1).^2+x0i(2).^2+x0i(3).^2)*1E2);
+    vi=round(sqrt(v0i(1).^2+v0i(2).^2+v0i(3).^2)*1E2);
+    fname0=[fname0,'_',material,'_',num2str(rd),'m','_',num2str(xi),'m_',num2str(vi),'ms-1'];
     fnamewall=data{1}{22};
-    massrate=str2num(a(24));
-    sw=str2num(a(26));
+    massrate=str2num(data{1}{24});
+    sw=str2num(data{1}{26});
     sw_neu=sw(1); sw_imp=sw(2);
     mainion=data{1}{28};
+    
     %% upload plasma background
-    disp('upload plasma background...')
-    fnamepbg
+    disp('Uploading plasma background...')
+    disp(['The background file is: ',fnamepbg])
+    disp('-------------------------------------------')
     load(fnamepbg);
     fieldNe=fieldN(1,:,:,:,:)./n0;
     fieldNi=fieldN./n0;
 
     if size(fieldNi,1)==1
-        disp('No impurities provided in background plasma. Impurities excluded')
+        disp('No impurities provided in the background plasma. Impurities excluded.')
     elseif ~sw_imp
         fieldNi=fieldNi(1,:,:,:,:);%to not load impurities
-        disp('Impurities excluded')
+        disp('Impurities excluded.')
     end
     clear fieldN
     fieldTe=fieldTe./T0;
@@ -65,13 +77,13 @@ try
         end
     end
     if ~exist('fieldNn')
-        disp('No neutral density  provided in background plasma. Neutrals excluded')
+        disp('No neutral density  provided in background plasma. Neutrals excluded.')
     elseif ~exist('fieldTn') && exist('fieldNn')
-        disp('No neutral Temperature  provided in background plasma. Neutrals temperature set to 1eV')
+        disp('No neutral Temperature  provided in background plasma. Neutrals temperature set to 1eV.')
         fieldTn=ones(size(fieldNn))./T0;
     elseif ~sw_neu
         clear fieldNn fieldTn;% to not load neutrals
-        disp('Neutrals excluded')
+        disp('Neutrals excluded.')
     end
     mami=1; %m_atom/m_i
     if size(fieldNi,1)==1 %H
@@ -93,33 +105,35 @@ try
         disp('main ion not recongnized/implemented')
     end
 if strcmp(fnamewall,'NO')
-    disp('No wall file specified, reflections with wall ignored')
+    disp('No wall file specified, reflections with wall ignored.')
 else
     try
 wall=load(fnamewall);
 Rwall=wall(:,1)./100; Zwall=wall(:,2)./100; %wall units in cm
 clear wall
     catch
-     disp('Can not load specified wall file. Reflections with wall ignored')
+     disp('Can not load specified wall file. Reflections with wall ignored.')
      clear Rwall Zwall
     end
 end
-    %% intialization
-    %constants
+
+    %% intialization: setting the values of the physical constants
     epsilon0=8.8542e-12;
     mi=A(1).*1.67e-27;%kg, H
     me=9.1094e-31; %kg
-    Tw=300;
+    Tw=300; %350K pour le divertor activement refroidit de WEST ???
     qe=1.6022e-19;
+    B0 = 1;
     sigma_SB=5.67e-8; %W/m^2/sec/K^4
     h=6.6261e-34; %J*s Planck constant
     kb=1.3807e-23; %J/K Boltzmann constant
     mime=sqrt(mi/me);
     cs0=9.79e3*sqrt(2*T0/A(1));
     rho_s=1.02*sqrt(T0*A(1))/(B0.*1e4); %m
-    E_rec=13.6; %eV, ionization potentia energy (H) for recombination on dust surface
-    a=rd/rho_s; %dust size in rho-s units
+    E_rec=13.6; %eV, ionization potentia energy (H) for recombination on dust surface + H2 molecule formation
+    E_mol=1.1 %Recombination energy into molecules
  
+    %Adimensionalisation of the mesh
     mesh(1).xcells=mesh(1).xcells./rho_s;
     mesh(1).ycells=mesh(1).ycells./rho_s;
 
@@ -134,6 +148,7 @@ end
         mesh(1).phicells=mesh(1).phicells*pi/180;
     end
    
+    %Speed-position initial conditions
     x0i=[x0i(1)/rho_s x0i(2)/rho_s x0i(3)];% in rho_s
     X0=x0i(1).*cos(x0i(3));  Y0=x0i(1).*sin(x0i(3)); Z0=x0i(2);
     v0i=v0i./cs0; %in c_s
@@ -157,6 +172,7 @@ end
         fieldEphi=fieldEphi./T0.*rho_s;
     end
     
+    %initialization: giving the right thermodynamical values for each material
     if strcmp(material,'C')
         Pvap_A=-40181; Pvap_B=14.8; % For vapor pressure [Smirnov PPCF 2007]
         mI=12*1.67e-27;%kg
@@ -182,6 +198,19 @@ end
         b_see=0.5; %General relation from Dekker1981 because can't find B specific data
         boilT=4200;
         meltT=2349;
+    elseif strcmp(material,'W')
+        Pvap_A=-45100; Pvap_B=12.85;
+        mI=183.84*1.67e-27;
+        rho_d=19300; 
+        cp=208;
+        Wf=4.55;
+        heb= 4480000;
+        hsub= 4670000; 
+        hmel= 192000; 
+        epsilon_d=0.35;
+        b_see=0.8; 
+        boilT=5828;
+        meltT=3695;
     elseif strcmp(material,'B4C')
         Pvap_A=-31690; Pvap_B=13.42;%For vapor pressure fitted from [H.E. Robson and P.W. Gilles J.Phys.Chem 1964]
         mI=55.255*1.67e-27;%kg
@@ -222,22 +251,23 @@ end
         boilT=1603;
         meltT=453.65;
     else
-        disp([material, ' :material not recognized. Exiting'])
+        disp([material, ' :material not recognized. Exiting.'])
         if ~test exit; end
     end
     
+    %Coefficients nedeed for SEE
     C_see=load([mainfolder,'YoungDekkerFit_',material,'.txt']);
-    m_d=4*pi/3*(a*rho_s).^3.*rho_d;
     
     %normalization/switches
-    k=(3/(4*pi*rho_d))^(2/3)*mi*m_d^(-1/3)*n0*rho_s; %ion drag force
-    k1=(3/rho_d)^(2/3)*(4*pi/m_d)^(1/3)*mI*rho_s/cs0;
+    a=rd/rho_s; %dust size in rho-s units
+    m_d=4*pi/3*(a*rho_s).^3.*rho_d;
     kg=rho_s/cs0.^2*9.81;
-    kE=(3/4/pi/rho_d/m_d.^2).^(1/3).*(T0/cs0).^2.*(4*pi*epsilon0);
-    kL=(3/rho_d/m_d.^2*(4*pi).^2).^(1/3).*(T0.*B0.*rho_s/cs0).*(epsilon0);
-    
     sw_th=1;%switch for thermionic emission
     sw_see=1;%switch for seconday electron emission
+    sw_BS=0;%switch for electron and ion backscattering
+    sw_REC=0;%switch for ion recombination
+    
+    %Set of adimensionned dust potential
     x=linspace(-8,3,5000);
     HeavisideX=(x>=0); % heaviside(x)
     HeavisidemX=(x<0); % heaviside(-x)
@@ -263,15 +293,18 @@ end
         clear f1 f11
     end
     
-    
+    %ending initialization
     T1=toc;
-    s = seconds(T1);
-    s.Format = 'hh:mm:ss';
-    disp(['Time for initialization ',char(s)])
+    %s = seconds(T1);
+    %s.Format = 'hh:mm:ss';
+    disp('-------------------------------------------')
+    disp(['Time for initialization ',num2str(T1(1)),' s'])
+    disp('-------------------------------------------')
     disp('-------------------------------------------')
     %%
-    disp('computing dust dynamics...')
+    disp('Computing dust dynamics...')
   
+  	%initialisation of the number of trajectories with phi_or_t
         if phi_or_t==1 % change initial toroidal position
             kkktot=length(mesh(1).phicells);
         elseif phi_or_t==2 && size(fieldNe,2)==1
@@ -311,7 +344,8 @@ end
                 klist=1:kkktot;
                 kleft=setdiff(klist,nn);
                 if isempty(kleft)
-                    disp('we have all the files')
+                    disp(['The data files have already been computed in ',folder1])
+                    disp('-------------------------------------------')
                     break;
                 else
                     disp(['first missing file detected: ',num2str(kleft(1))])
@@ -320,12 +354,14 @@ end
             end
         end
         
+        %Displaying the number of dust trajectory
         fnameout=[folder1,fname0,'_',num2str(kkk,'%03i'),'.mat'];
         fnameoutnew=fnameout;
         save(fnameout,'kkk'); %place holder file
         tic;
         disp(['Trajectory ',num2str(kkk),'/',num2str(kkktot)]);
         
+        %initialisation of the spatio-speed initial conditions with phi_or_t
         solvedyn=1; it=1;
          Nfact=2*pi/(mesh(1).phinodes(end)-mesh(1).phinodes(1)); clear x0 v0
         if phi_or_t==1 %change the toroidal position
@@ -373,7 +409,9 @@ end
             x0=[mesh.xcells(ilist(kkk),1), x0i(2), mesh.phicells(jlist(kkk))];
             disp(['i_R = ',num2str(ilist(kkk)),'/',num2str(length(mesh.xcells(:,1))),' i_phi = ',num2str(jlist(kkk)),'/',num2str(length(mesh.phicells))])
         end
-        clear t R vR Z vZ phi vphi Chi Tau Td Mu ITHd IRd IZd IPHId Nd Ted Md ERd EZd Ephid Fi FE  dead MTOR LNLAMBDA
+        
+        %Clearing and re-initialisation of the variables were the dust dynamics is stored
+        clear t R vR Z vZ phi vphi Chi Qw Rd Tau Td Mu ITHd IRd IZd IPHId Nd Ted Md ERd EZd Ephid Fi FE  dead MTOR LNLAMBDA
         %%
         Ntmax=4e5;
         R=zeros( Ntmax,1).*NaN;
@@ -384,6 +422,8 @@ end
         phi=R;
         vphi=R;
         Chi=R;
+        Qw=R;
+        Rw=R;
         Tau=zeros( Ntmax,size(fieldNi,1)).*NaN;
         Td=R; Mu=R;
         IPHId=R;
@@ -395,16 +435,23 @@ end
         Md=zeros( Ntmax,3).*NaN;
         Ed=zeros( Ntmax,3).*NaN;
         Psimelt=R;
+        Psiboil=R;
         Nnd=R; Tnd=R;         Rho_d = R;  Cp = R;
         %%
         it=1;
+        hasmelt=0;
         
+        %Beginning of the dynamics resolution
         while solvedyn
             if it==1
-                if ~exist("x0") x0=x0i; end
-                if ~exist("v0") v0=v0i; end
+                if ~exist('x0') x0=x0i; end
+                if ~exist('v0') v0=v0i; end
                 itf=itf0; R(it)=x0(1); vR(it)=v0(1); Z(it)=x0(2); vZ(it)=v0(2); phi(it)=x0(3); vphi(it)=v0(3);
-                Chi(it)=3; Tau(it,:)=ones(size(A)); Td(it)=[300]; mu=1;
+                Chi(it)=3; %-log(4*pi*me/mi*(1+5/3*Ti/Te))/2
+                Qw(it)=-1E-11; %4*pi*epsilon0*4*pi*epsilon0*ad*(1+ad/lDtot)*Chi(it)*Te; 
+                Rd(it)=rd;
+                Tau(it,:)=ones(size(A)); Td(it)=[300]; %350K pour le divertor activement refroidit de WEST ???
+                mu=1;
                 Mu(it)=mu;
                 IPHId(it)=dsearchn(mesh(1).phicells',x0(3));
                 IRd(it)=dsearchn(mesh(1).xcells(:,1),x0(1));
@@ -416,6 +463,7 @@ end
                 
                 Fi(it)=NaN; FE(it)=NaN;
                 Psimelt(it)=0; psimelt=0;
+                Psiboil(it)=0; psiboil=0;
                 t(1)=t_f(itf);
             end
             
@@ -459,7 +507,7 @@ end
             mZ=fieldmZ(iz,itf,ir,ith,iphi1);
             mphi=fieldmphi(iz,itf,ir,ith,iphi1);
             %temperature dependent density and thermal capacity
-           [rho_d cp]=cp_func(material, Td(it), meltT);
+           [rho_d cp hsub]=cp_func(material, Td(it), meltT, boilT);
                 if (isnan(Ne) || Te.*T0<0.1)  mR=0; mZ=0; mphi=0;  Nn=0; Tn=0; Ne=1e13/n0; Te=0.1/T0; Ti=Te; Ni=Ne.*ones(1,length(Zi)); 
                 end
 
@@ -467,15 +515,21 @@ end
                 tau=Ti./Te;
                 u=sqrt((mR-vR(it)).^2+(mZ-vZ(it)).^2+(mphi-vphi(it)).^2)./sqrt(Ti).*sqrt(A./A(1));
                 lD=debyelength(Te.*T0,Ne.*n0);
+                lDtot=sqrt(1/(debyelength(Te.*T0,Ne.*n0).^2+1/debyelength(Ti.*T0,Ne.*n0).^2));
                 ad=(3/4/pi*m_d*mu/rho_d).^(1/3);
+                qw=-4*pi*epsilon0*ad*(1+ad/lDtot)*Chi(it)*Te;
                 lnLambda=Coul_log(Chi(it),tau,ad,u,lD);
                 %% dust charge
                 % all currents are divided by pi*a_d^2*e*cs0*n_e
                 
                 T=Td(it);
                 %electrons
-                Iep=-sqrt(Te.*4/pi).*mime.*exp(-x);
-                Ien=-sqrt(Te.*4/pi).*mime.*(1-x);
+                rho_e = sqrt(me*qe*Te*T0)/(qe*B0);
+                rc = 0.3E-6;
+                ksi = 1; %tanh((rho_e-ad)/rc);
+                Ie0 = ksi.*sqrt(Te.*4/pi).*mime+(1-ksi).*8.*Te.*T0./(B0.*qe.*pi.*ad.*cs0).*(1+Ti./Te);
+                Iep=-Ie0.*exp(-x);
+                Ien=-Ie0.*(1-x);
                 %ions
                 Iip=0; Iin=0;
                 for z=1:length(Zi)
@@ -492,8 +546,11 @@ end
                 F_f = 10^sum(C_see.*log10(Te.*T0).^((0:numel(C_see)-1)'));
                 dSEEp=sw_see.*2/(2-b_see)*F_f;
                 dSEEn=sw_see.*2/(2-b_see)*F_f*(1-3*x.*Te.*T0./Wf)./(1-x)./(1-x.*Te.*T0./Wf).^3.*exp(-x);%Autricque These
+                %Electron backscattering
+                fch = 0.60*(1-1.86*(Te*T0)^(-0.23)*exp(-0.0033*Te*T0));
+                IEBS = -sw_BS.*Ie0.*exp(-x).*fch;
                 
-                eqtot=(Iep.*(1-dSEEp)+Iip+Ithp).*HeavisideX+(Ien.*(1-dSEEn)+Iin+Ithn).*HeavisidemX;
+                eqtot=(Iep.*(1-dSEEp)-IEBS+Iip+Ithp).*HeavisideX+(Ien.*(1-dSEEn)-IEBS+Iin+Ithn).*HeavisidemX;
                 
                 %% dust temperature
                 %all fluxes are divided by 4pia^2
@@ -513,6 +570,8 @@ end
                         +(5+2.*u(z).^2+(3+2.*u(z).^2)./u(z).*sqrt(-x.*Zi(z)/tau(z))).*exp(-um(z).^2))...
                         +(3./u(z)+12.*u(z)+4.*u(z).^3+2.*x.*Zi(z)/tau(z).*(1./u(z)+2.*u(z))).*(erf(up(z))+erf(um(z))));
                 end
+                qip=q_currp-Ne.*Te.*abs(Iep).*(2+x);
+                qin=q_currn-Ne.*Te.*abs(Ien)./(1-x).*(2-x);
                 %energy of recombination on dust surface
                 %This is now holding just in the case of hydrogen, no impurities
                 q_currp= q_currp+E_rec/T0.*abs(Iip).*Ni(1);
@@ -524,11 +583,21 @@ end
                 zeta=-x.*Te.*T0./Wf;
                 q_seen=3.*Wf./T0.*Ne.*Te.*abs(dSEEn.*Ien) .*n0.*cs0.*T0./4 .*(1+zeta).*(1+2.*zeta)./(1+3.*zeta);%Vignitchouk PPCF 2014
                 
+                %Backscatterings and recombination
+                fcr = 0.51*(1-1.74*(Te*T0)^(-0.23)*exp(-0.0043*Te*T0));
+                RN = 0.3595*tanh(Ti*T0/3.1132)+0.0246*exp(-((Ti*T0-20.8472)/42.1102)^2);
+                RE = 0.4988*tanh(Ti*T0/2.0444)+0.1274*exp(-((Ti*T0+3.2303)/46.0212)^2);
+                qEBS = sw_BS*2*abs(qe*Te*T0*cs0*Ne*n0*Ie0/4)*exp(-x)*fch;
+                qIBSp = sw_BS*RE*qip;
+                qIBSn = sw_BS*RE*qin;
+                %Techniquement à mettre dans l'équation de la chaleur mais la correction est faible (qq %)
+                qRECp = sw_REC*(1-RN)*Iip*cs0*Ne*n0/4*((E_rec+Emol)*qe-kb*T); 
+                qRECn = sw_REC*(1-RN)*Iin*cs0*Ne*n0/4*((E_rec+Emol)*qe-kb*T); 
                 
-                qred=(q_currp-q_seep).*HeavisideX+(q_currn-q_seen).*HeavisidemX; %heat flux/4pia^2 excluding the terms depending on Td
+                %heat flux/4pia^2 excluding the terms depending on Td
+                qred=(q_currp-q_seep-qEBS-qIBSp+qRECp).*HeavisideX+(q_currn-q_seen-qEBS-qIBSn+qRECn).*HeavisidemX; 
 
-                %% solve for charge and temperature 
-
+                %% solve for charge
                 i=find(diff(sign(eqtot)));
                 x1=(x(1:end-1)+x(2:end))/2;
                 chi=x1(i);
@@ -538,52 +607,79 @@ end
                 end 
                 qred=interp1(x,qred,chi);
                 
+                %Normalization
                 ktemp=(4.*pi/mu/m_d)^(1/3).*(3/rho_d).^(2/3)./cp.*(rho_s./cs0).*qe;
-                [ts,td] = ode45(@(t,y) eqTemp(t,y,ktemp,qred,chi,sw_th,Te.*T0,Wf,Pvap_A,Pvap_B,hsub,mI,epsilon_d,Tw,kb,qe,me,h,sigma_SB),[0,dt/2,dt],[Td(it)]);
+                k=(3/(4*pi*rho_d))^(2/3)*mi*m_d^(-1/3)*n0*rho_s; %ion drag force
+    		k1=(3/rho_d)^(2/3)*(4*pi/m_d)^(1/3)*mI*rho_s/cs0;
+    		kE=(3/4/pi/rho_d/m_d.^2).^(1/3).*(T0/cs0).^2.*(4*pi*epsilon0);
+    		kL=(3/rho_d/m_d.^2*(4*pi).^2).^(1/3).*(T0.*B0.*rho_s/cs0).*(epsilon0);
+    		
+    		%Temperature evolution
+                [ts,td] = ode45(@(t,y) eqTemp(t,y,ktemp,qred,chi,sw_th,Te.*T0,Wf,Pvap_A,Pvap_B,hsub,mI,epsilon_d,Tw,kb,qe,me,h,sigma_SB,ad,epsilon0,m_d,cp,material),[0,dt/2,dt],[Td(it)]);
                 td=td(end);
                 if ~isreal(td) 
                 disp('Dust temperature is not real')
                 if test keyboard; else dead=-10; break; end
                 end
                 if Td(it)<=meltT && td>=meltT
-                    disp('melting')
+                    disp('The dust is melting...')
                     qmelt=(m_d*mu/4/pi).^(2/3)*(rho_d/3)^1/3*hmel*(1-Psimelt(it));
-                    [ts,td] = ode45(@(t,y) eqTemp(t,y,ktemp,qred-qmelt,chi,sw_th,Te.*T0,Wf,Pvap_A,Pvap_B,hsub,mI,epsilon_d,Tw,kb,qe,me,h,sigma_SB),[0,dt/2,dt],[Td(it)]);
+                    [ts,td] = ode45(@(t,y) eqTemp(t,y,ktemp,qred-qmelt,chi,sw_th,Te.*T0,Wf,Pvap_A,Pvap_B,hsub,mI,epsilon_d,Tw,kb,qe,me,h,sigma_SB,ad,epsilon0,m_d,cp,material),[0,dt/2,dt],[Td(it)]);
                     td=td(end); psimelt=1;
                     if td<=meltT
                         td=meltT;
-                        q0=qred-q_sub(Td(it),Pvap_A,Pvap_B,hsub,mI,kb,qe)-sw_th.*q_th(Td(it),chi,Wf,Te,me,kb,h,qe)-q_bb(Td(it),Tw,epsilon_d,sigma_SB);
-                        q1=qred-q_sub(td,Pvap_A,Pvap_B,hsub,mI,kb,qe)-sw_th.*q_th(td,chi,Wf,Te,me,kb,h,qe)-q_bb(Td,Tw,epsilon_d,sigma_SB);
+                        q0=qred-q_sub(Td(it),Pvap_A,Pvap_B,hsub,mI,kb,qe,ad,Te*T0,epsilon0,me,m_d,cp,material)-sw_th.*q_th(Td(it),chi,Wf,Te,me,kb,h,qe)-q_bb(Td(it),Tw,epsilon_d,sigma_SB);
+                        q1=qred-q_sub(td,Pvap_A,Pvap_B,hsub,mI,kb,qe,ad,Te*T0,epsilon0,me,m_d,cp,material)-sw_th.*q_th(td,chi,Wf,Te,me,kb,h,qe)-q_bb(Td,Tw,epsilon_d,sigma_SB);
                         q2=q0-q1;
                         psimelt=Psimelt(it)+q2.*(1/hmel)*(3/rho_d).^(2/3).*(4*pi/mu/m_d).^(1/3).*dt.*(rho_s/cs0);
                     end
                 elseif Td(it)>=meltT && td<=meltT
                     disp('solidification')
                     qmelt=(m_d*mu/4/pi).^(2/3)*(rho_d/3)^1/3*hmel*(Psimelt(it));
-                    [ts,td] = ode45(@(t,y) eqTemp(t,y,ktemp,qred-qmelt,chi,sw_th,Te.*T0,Wf,Pvap_A,Pvap_B,hsub,mI,epsilon_d,Tw,kb,qe,me,h,sigma_SB),[0,dt/2,dt],[Td(it)]);
+                    [ts,td] = ode45(@(t,y) eqTemp(t,y,ktemp,qred-qmelt,chi,sw_th,Te.*T0,Wf,Pvap_A,Pvap_B,hsub,mI,epsilon_d,Tw,kb,qe,me,h,sigma_SB,ad,epsilon0,m_d,cp,material),[0,dt/2,dt],[Td(it)]);
                     td=td(end); psimelt=0;
                     if td>=meltT
                         td=meltT;
-                        q0=qred-q_sub(Td(it),Pvap_A,Pvap_B,hsub,mI,kb,qe)-sw_th.*q_th(Td(it),chi,Wf,Te,me,kb,h,qe)-q_bb(Td(it),Tw,epsilon_d,sigma_SB);
-                        q1=qred-q_sub(td,Pvap_A,Pvap_B,hsub,mI,kb,qe)-sw_th.*q_th(td,chi,Wf,Te,me,kb,h,qe)-q_bb(Td,Tw,epsilon_d,sigma_SB);
+                        q0=qred-q_sub(Td(it),Pvap_A,Pvap_B,hsub,mI,kb,qe,ad,Te*T0,epsilon0,me,m_d,cp,material)-sw_th.*q_th(Td(it),chi,Wf,Te,me,kb,h,qe)-q_bb(Td(it),Tw,epsilon_d,sigma_SB);
+                        q1=qred-q_sub(td,Pvap_A,Pvap_B,hsub,mI,kb,qe,ad,Te*T0,epsilon0,me,m_d,cp,material)-sw_th.*q_th(td,chi,Wf,Te,me,kb,h,qe)-q_bb(Td(it),Tw,epsilon_d,sigma_SB);
                         q2=q0-q1;
                         psimelt=Psimelt(it)+q2.*(1/hmel)*(3/rho_d).^(2/3).*(4*pi/mu/m_d).^(1/3).*dt.*(rho_s/cs0);
                     end
                 end
                 
+                if psimelt==1 && ~hasmelt
+                    disp('The dust has finished melting.') 
+                    hasmelt=1;
+                end
+                
+                if Td(it)<=boilT && td>=boilT
+                    disp('The dust is boiling...')
+                    qboil=(m_d*mu/4/pi).^(2/3)*(rho_d/3)^1/3*hsub*(1-Psiboil(it));
+                    [ts,td] = ode45(@(t,y) eqTemp(t,y,ktemp,qred-qboil,chi,sw_th,Te.*T0,Wf,Pvap_A,Pvap_B,hsub,mI,epsilon_d,Tw,kb,qe,me,h,sigma_SB,ad,epsilon0,m_d,cp),[0,dt/2,dt],[Td(it)]);
+                    td=td(end); psiboil=1;
+                    if td<=boilT
+                        td=boilT;
+                        q0=qred-q_sub(Td(it),Pvap_A,Pvap_B,hsub,mI,kb,qe,ad,Te*T0,epsilon0,me,m_d,cp,material)-sw_th.*q_th(Td(it),chi,Wf,Te,me,kb,h,qe)-q_bb(Td(it),Tw,epsilon_d,sigma_SB);
+                        q1=qred-q_sub(td,Pvap_A,Pvap_B,hsub,mI,kb,qe,ad,Te*T0,epsilon0,me,m_d,cp,material)-sw_th.*q_th(td,chi,Wf,Te,me,kb,h,qe)-q_bb(Td(it),Tw,epsilon_d,sigma_SB);
+                        q2=q0-q1;
+                        psiboil=Psiboil(it)+q2.*(1/hsub)*(3/rho_d).^(2/3).*(4*pi/mu/m_d).^(1/3).*dt.*(rho_s/cs0);
+                    end
+                end
+                    
                 %% dust mass
-                [ts,mu] = ode45(@(t,y) eqMass(t,y,td,k1,Pvap_A,Pvap_B,mI,kb),[0,dt/2,dt],[mu]);
+                [ts,mu] = ode45(@(t,y) eqMass(t,y,td,k1,Pvap_A,Pvap_B,mI,kb,Te*T0,hsub,qe,ad,epsilon0,me,mu,m_d,material),[0,dt/2,dt],[mu]);
                 mu=mu(end);
-                if mu<=1e-4 disp('dust evaporated completely'); dead=4; break; end
+                if mu<=1e-4 disp('The dust has completely evaporated'); dead=4; break; end
                 
                 
            % end
             %% dust trajectory
             %if it==17558 keyboard; end
-            [ts,Rs] = ode45(@(t,y) eqmotR(t,y,Ni,mR,k,mu,Ti,vphi(it),chi,lnLambda,Te,ER,kE,A,Zi,Nn,Tn,Mn,mami),[0,dt/2,dt],[R(it) vR(it)]);
-            [ts,Zs] = ode45(@(t,y) eqmotZ(t,y,Ni,mZ,k,mu,Ti,chi,lnLambda,kg,Te,EZ,kE,A,Zi,Nn,Tn,Mn,mami),[0,dt/2,dt],[Z(it) vZ(it)]);
-            [ts,phis] = ode45(@(t,y) eqmotphi(t,y,Ni,mphi,k,mu,Ti,vphi(it),vR(it),R(it),chi,lnLambda,Te,Ephi,kE,A,Zi,Nn,Tn,Mn,mami),[0,dt/2,dt],[phi(it) vphi(it)]);
+            [ts,Rs] = ode45(@(t,y) eqmotR(t,y,Ni,mR,k,mu,Ti,vphi(it),chi,lnLambda,Te,ER,kE,A,Zi,Nn,Tn,Mn,mami,qw),[0,dt/2,dt],[R(it) vR(it)]);
+            [ts,Zs] = ode45(@(t,y) eqmotZ(t,y,Ni,mZ,k,mu,Ti,chi,lnLambda,kg,Te,EZ,kE,A,Zi,Nn,Tn,Mn,mami,qw),[0,dt/2,dt],[Z(it) vZ(it)]);
+            [ts,phis] = ode45(@(t,y) eqmotphi(t,y,Ni,mphi,k,mu,Ti,vphi(it),vR(it),R(it),chi,lnLambda,Te,Ephi,kE,A,Zi,Nn,Tn,Mn,mami,qw),[0,dt/2,dt],[phi(it) vphi(it)]);
             
+            %Saving the values of the running iteration
             it=it+1; 
             t(it)=t(it-1)+dt;
             R(it)= Rs(end,1);
@@ -593,6 +689,8 @@ end
             phi(it)= phis(end,1);
             vphi(it)=phis(end,2);
             Chi(it)= chi;
+            Qw(it)= qw;
+            Rd(it)= ad;
             Tau(it,:)= tau;
             Td(it)= td; Mu(it)= mu;
             IPHId(it)=dsearchn(mesh(1).phicells',phi(it));
@@ -603,9 +701,10 @@ end
             Md(it,:)= [mR mZ mphi];
             Ed(it,:)= [ER EZ Ephi];
             Psimelt(it)=psimelt;
+            Psiboil(it)=psiboil;
             Nnd(it)=Nn; Tnd(it)=Tn;
             Rho_d(it) = rho_d; Cp(it) = cp;
-            
+         
             if exist('Rwall')
             [R,Z,vR,vZ]=wall_reflection(Rwall./rho_s,Zwall./rho_s,R,Z,vR,vZ,it);
             end
@@ -625,6 +724,7 @@ end
             end
         end
         
+        %Saving the dust trajectory in the temp files
         t=t(1:it);
         R=R(1:it);
         vR=vR(1:it);
@@ -633,6 +733,7 @@ end
         phi=phi(1:it);
         vphi=vphi(1:it);
         Chi=Chi(1:it);
+        Qw=Qw(1:it);
         Tau=Tau(1:it,:);
         Td=Td(1:it); Mu=Mu(1:it);
         IPHId=IPHId(1:it);
@@ -644,22 +745,31 @@ end
         Md=Md(1:it,:);
         Ed=Ed(1:it,:);
         Psimelt=Psimelt(1:it);
+        Psiboil=Psiboil(1:it);
         Nnd=Nnd(1:it); Tnd=Tnd(1:it);
         Rho_d=Rho_d(1:it); Cp=Cp(1:it);
         fnameout=[folder1,fname0,'_',num2str(kkk,'%03i'),'.mat'];
         
-        save(fnameout,'NKU','n0','T0','B0','cs0','rho_s','a','x0','v0','R','vR','Z','vZ','phi','vphi','Chi','Tau','Td','Mu',...
-            'ITHd','IRd','IZd','IPHId','Nd','Ted','Md','Ed','material','t','dt','test','dead','Psimelt','Nnd','Tnd','Rho_d','Cp');
-        disp(['results saved in ',fnameout])
+        save(fnameout,'NKU','n0','T0','B0','cs0','rho_s','a','x0','v0','R','vR','Z','vZ','phi','vphi','Chi','Qw','Rd','Tau','Td','Mu',...
+            'ITHd','IRd','IZd','IPHId','Nd','Ted','Md','Ed','material','t','dt','test','dead','Psimelt','Psiboil','Nnd','Tnd','Rho_d','Cp');
+        disp(['The results are saved in ',fnameout])
         clear fnameoutnew
+        
+        %End of computation phase
         T1(kkk+1)=toc;
-        s = seconds(T1(kkk+1));
-        s.Format = 'hh:mm:ss';
-        disp(['Computation time for this step: ',char(s)])
+        %s = seconds(T1(kkk+1));
+        %s.Format = 'hh:mm:ss';
+        disp('-------------------------------------------')
+        disp(['Computation time for solving dust trajectory: ',num2str(T1(2)),' s'])
+        disp('-------------------------------------------')
         disp('-------------------------------------------')
     end
+    
+    
     tic;
     fname1=dir([folder1,fname0,'*']);
+    
+    %Saving all the trajectory data in one big file
     if length(fname1)==kkktot         
         if ~exist('fnameout_f')
             fnameout_f=[folder1,'ongoing_',fname0,'.txt'];
@@ -670,8 +780,8 @@ end
         NAS=NeutralAtomSource(rd,Rho_d,mI/mi,t.*rho_s/cs0,Mu);
         save([folder2,fname0,'.mat'],'NAS','-append')
         fnameBsource=[folder2,fname0,'_NAS_EMC3.txt'];
-        a=NAS_to_EMC3(R*rho_s*100,Z*rho_s*100,rad2deg(phi),NAS,massrate,mI/(mi./A(1)),fnameBsource,Mu);
-        if strcmp(material,'B') || strcmp(material,'C') || strcmp(material,'Li')
+        a=NAS_to_EMC3(R*rho_s*100,Z*rho_s*100,phi*180./pi,NAS,massrate,mI/(mi./A(1)),fnameBsource,Mu);
+        if strcmp(material,'B') || strcmp(material,'C') || strcmp(material,'Li') || strcmp(material,'W')
             fname_imp=[folder2,fname0,'_input.imp_',material];
         write_EMC3_imp_input(a,fname_imp,material)
         elseif strcmp(material,'B4C') || strcmp(material,'BN')
@@ -690,35 +800,36 @@ end
         disp('total number of file not enough for reassembling')
     end
     
+    %Displaying total computation time
     T1(end+1)=toc;
-    s = seconds(sum(T1));
-    s.Format = 'hh:mm:ss';
-    disp(['total computation time ',char(s)])
-    if ~test exit; end
-    
+    %s = seconds(sum(T1));
+    %s.Format = 'hh:mm:ss';
+    disp('-------------------------------------------')
+    disp(['Total computation time: ',num2str(sum(T1)),' s'])
+    %if ~test exit; end
+
+%Inform if there is a code error
 catch e
     try e
         e.stack
     catch; end
     disp(e.identifier)
     disp(e.message)
-    disp(['file', e.stack.file, ' line ', num2str(e.stack.line)])
+    disp(['file', e.stack.file, ' line ', num2str(e.stack(1).line)])
     disp('exiting')
     if exist('fnameoutnew') eval(['!rm ',fnameoutnew]); end 
-    if ~test exit; end
+    %if ~test exit; end
 end
 
-%% visualization
-if test
-    kphi=dsearchn(mesh(1).phicells',x0(3)); dph=0;
-    figure; pcolor(mesh(1).xcells.*rho_s,mesh(1).ycells.*rho_s,(squeeze(fieldmphi(1,1,:,:,kphi)))); shading flat; axis equal
+%% visualization of the trajectory
+disp('Plotting dust trajectory...')
+kphi=dsearchn(mesh(1).phicells',x0(3)); dph=0;
+figure; pcolor(mesh(1).xcells.*rho_s,mesh(1).ycells.*rho_s,(squeeze(fieldmphi(1,1,:,:,kphi)))); shading flat; axis equal
 %figure; pcolor(mesh(1).xcells.*rho_s,mesh(1).ycells.*rho_s,(squeeze(sum(fieldNi(2:end,1,:,:,kphi),1))).*n0); shading flat; axis equal
 
-    hold on; plot(R'.*rho_s,Z'.*rho_s,'r','linewidth',2)
-                if exist('Rwall')
-                    plot(Rwall,Zwall,'k','linewidth',2)
-                end
+hold on; plot(R'.*rho_s,Z'.*rho_s,'r','linewidth',2)
+if exist('Rwall')
+     plot(Rwall,Zwall,'k','linewidth',2)
 end
-
-
-
+disp('*******************************************')
+disp('*******************************************')

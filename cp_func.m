@@ -1,4 +1,4 @@
-function [rho_d cp]= cp_func(material,td,meltT)
+function [rho_d cp hsub]= cp_func(material,td,meltT,boilT)
 if strcmp(material,'B') %https://webbook.nist.gov/
     mmol=10.81;
     alpha_v=3.*6.4e-6; rho_d = 2340; %T. Lundstrom Journal of Alloys and Compunds 267 1998
@@ -11,6 +11,22 @@ if strcmp(material,'B') %https://webbook.nist.gov/
         CP=[ 25.12664 1.975493 0.338395 -0.040032  -2.635578];
     else
         CP=[ 10.18574 29.24415 -18.02137 4.212326 -0.550999];
+    end
+    
+elseif strcmp(material,'W')
+    mmol=0.18384;
+    Rgp = 8.314;
+    alpha_v = 5E-6;
+    rho_d = 19300/(1+alpha_v*(td-298)).^3; 
+    cpT = @(x) (21.452+1.24343e-2*x-1.23607e-5*x^2+7.86998e-9*x^3-2.27048e-12*x^4+2.67677e-16*x^5)/mmol;
+    cp = cpT(td);
+    DeltacpT = @(x) (3/2*Rgp/mmol-(21.452+1.24343e-2*x-1.23607e-5*x.^2+7.86998e-9*x.^3- 2.27048e-12*x.^4+ 2.67677e-16*x.^5)/mmol);
+    hsub = 4670000 + integral(DeltacpT, 298, td);
+    if td>=meltT
+    	alpha_v=70E-6; 
+        rho_d = 16300/(1+alpha_v*(td-meltT)).^3;
+        cp = 291;
+        hsub = 4480000 + (3/2*Rgp/mmol-cp)*(boilT-td);
     end
   
 elseif strcmp(material,'B4C') %https://webbook.nist.gov/
@@ -71,10 +87,10 @@ if strcmp(material,'C')
     cpT=td;
    cp=(CP(1)+ CP(2).*cpT + CP(3).*(cpT).^-1 + CP(4).*(cpT).^-2 + CP(5).*(cpT).^-3 +CP(6).*(cpT).^-4); % function for boron
 
-else
+elseif ~strcmp(material,'W')
+hsub = 508.*1e3/10.811e-3; 
 cpT = td/1000;
 cp=(CP(1)+ (CP(2).*cpT) + (CP(3).*(cpT).^2) + (CP(4).*(cpT).^3) + (CP(5)./(cpT.^2)))./(mmol.*1e-3); % function for boron
 end
 
-  rho_d=rho_d./(1+alpha_v.*(td-298));
 end

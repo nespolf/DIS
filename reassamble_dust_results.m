@@ -1,10 +1,10 @@
 function reassamble_dust_results(folder1,folder2,fname0)
 %% reassemble 
-disp('reassembling dust trajectories')
+disp('Reassembling dust trajectories...')
 fname1=dir([folder1,fname0,'*']);
 ktot=length(fname1);
 for k=1:ktot 
-load([fname1(k).folder,'/',fname1(k).name])
+load([folder1,'/',fname1(k).name])
 lll(k)=length(R);
 end
 R1=zeros(ktot,max(lll)).*NaN; Z1=R1; phi1=R1; vphi1=R1; vZ1=R1; vR1=R1; Mu1=R1;
@@ -16,7 +16,7 @@ dead1=(1:ktot).*NaN;
 Rho_d1=R1; Cp1=R1;
 for k=1:ktot 
     clear t
-	load([fname1(k).folder,'/',fname1(k).name])
+	load([folder1,'/',fname1(k).name])
 R1(k,1:length(R))=R; Z1(k,1:length(R))=Z; phi1(k,1:length(R))=phi;
 vR1(k,1:length(R))=vR; vZ1(k,1:length(R))=vZ; vphi1(k,1:length(R))=vphi;
 Mu1(k,1:length(R))=Mu; Td1(k,1:length(R))=Td; Chi1(k,1:length(R))=Chi;
@@ -41,8 +41,8 @@ for iii=1:size(Mu,1)
             aaa=aaa(~isnan(aaa));
             Mu_end(iii)=aaa(end);
 end
-disp([ 'mass lost outside the plasma ',num2str(sum(Mu_end)/size(Mu,1)*100),'%'])
+disp([ 'Mass lost at the outside of the plasma: ',num2str(sum(Mu_end)/size(Mu,1)*100),'%'])
 clear R1 Z1 phi1 vphi1 vZ1 vR1 Mu1 Nd1 Md1 Td1 Ted1 Tau1 Chi1 Ed1 t1 dead1 Cp1 Rho_d1 k ktot iii aaa
 fnameout=[folder2,fname0,'.mat'];
 save(fnameout,'-v7.3')
-disp(['file saved in ',fnameout])
+disp(['File saved in ',fnameout])

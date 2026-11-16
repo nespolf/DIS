@@ -1,5 +1,5 @@
 function write_EMC3_imp_input(NAS_EMC3,fnameout,element)
-disp('writing input.imp file for EMC3-EIRENE...')
+disp('Writing input.imp file for EMC3-EIRENE...')
 a=readlines('input.imp_31');
 b=readlines('input.imp_32_fixed_coeff');
 c=readlines('input.imp_33');
@@ -8,6 +8,8 @@ adas_folder={'/scratch/gpfs/fnespoli/B-atom/'};
 writelines(a,fnameout)
 if strcmp(element,'B')
     adas_list={'scd89_b.dat','acd89_b.dat','plt89_b.dat','prb89_b.dat'};
+elseif strcmp(element,'W')
+    adas_list={'scd96_c.dat','acd96_c.dat','plt96_c.dat','prb96_c.dat'};
 elseif strcmp(element,'C')
     adas_list={'scd96_c.dat','acd96_c.dat','plt96_c.dat','prb96_c.dat'};
 elseif strcmp(element,'N')
