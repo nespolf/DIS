@@ -131,7 +131,7 @@ end
     cs0=9.79e3*sqrt(2*T0/A(1));
     rho_s=1.02*sqrt(T0*A(1))/(B0.*1e4); %m
     E_rec=13.6; %eV, ionization potentia energy (H) for recombination on dust surface + H2 molecule formation
-    E_mol=1.1 %Recombination energy into molecules
+    E_mol=1.1; %Recombination energy into molecules
  
     %Adimensionalisation of the mesh
     mesh(1).xcells=mesh(1).xcells./rho_s;
@@ -591,8 +591,8 @@ end
                 qIBSp = sw_BS*RE*qip;
                 qIBSn = sw_BS*RE*qin;
                 %Techniquement à mettre dans l'équation de la chaleur mais la correction est faible (qq %)
-                qRECp = sw_REC*(1-RN)*Iip*cs0*Ne*n0/4*((E_rec+Emol)*qe-kb*T); 
-                qRECn = sw_REC*(1-RN)*Iin*cs0*Ne*n0/4*((E_rec+Emol)*qe-kb*T); 
+                qRECp = sw_REC*(1-RN)*Iip*cs0*Ne*n0/4*((E_rec+E_mol)*qe-kb*T); 
+                qRECn = sw_REC*(1-RN)*Iin*cs0*Ne*n0/4*((E_rec+E_mol)*qe-kb*T); 
                 
                 %heat flux/4pia^2 excluding the terms depending on Td
                 qred=(q_currp-q_seep-qEBS-qIBSp+qRECp).*HeavisideX+(q_currn-q_seen-qEBS-qIBSn+qRECn).*HeavisidemX; 

@@ -18,6 +18,9 @@ import scipy.integrate as scinteg
 
 #Function definition
 def cp_func(material, td, meltT, boilT):
+   """
+   Calculates the volumic mass, the heat capacity and the ablation enthalpy of the dust for each iteration
+   """
    if material=='B': #https://webbook.nist.gov/
        mmol = 10.81
        alpha_v = 3*6.4e-6 
@@ -105,6 +108,9 @@ def cp_func(material, td, meltT, boilT):
    return rho_d, cp, hsub
 
 def Coul_log(chi, tau, a, u, lD):
+   """
+   Calculates the Coulomb logarithm for drag forces
+   """
    b0 = a*chi/tau/(3+2*u**2)
    ls2 = lD**2/(1+3/tau/(3+2*u**2))
    etafit = 1+a/np.sqrt(ls2)*(1+np.sqrt(1/(6*tau)))
@@ -112,6 +118,9 @@ def Coul_log(chi, tau, a, u, lD):
    return lnLambda
 
 def Pvap(Td, Pvap_A, Pvap_B, material):
+   """
+   Calculates the vapor pressure of tungstene at dust temperature 
+   """
    #Vapor pressure from Clausius-Clapeyron
    Pvap = 10**(Pvap_A/Td+Pvap_B) #[Pa] 
 
@@ -123,6 +132,9 @@ def Pvap(Td, Pvap_A, Pvap_B, material):
    return Pvap
 
 def vapor_shielding(Te, hsub, mI, kb, qe, ad, epsilon0, me):
+   """
+   Calculates the maximal ablation rate of the dust
+   """
    #constants
    ZW = 15
    L0 = 1e-31
@@ -145,6 +157,9 @@ def vapor_shielding(Te, hsub, mI, kb, qe, ad, epsilon0, me):
    return Gamma_vs
 
 def q_th(T, x, Wf, Te, me, kb, h, qe):
+   """
+   Calculates the heat flux by thermionic emission
+   """
    #Te in eV
    Ithp = 16*np.pi*me*(kb*T)**2/h**3*np.exp(-Wf*qe/kb/T)
 
@@ -155,9 +170,15 @@ def q_th(T, x, Wf, Te, me, kb, h, qe):
    return q_th
    
 def q_bb(T, Tw, epsilon_d, sigma_SB, qe):
+   """
+   Calculates the heat flux by grey body emission
+   """
    return sigma_SB*epsilon_d*(T**4-Tw**4)/qe # last factor to convert to eV/m^2/s
 
 def q_sub(T, Pvap_A, Pvap_B, hsub, mI, kb, qe, ad, Te, epsilon0, me, m_d, cp, material):
+   """
+   Calculates the heat flux due to dust ablation
+   """
    q_sub = Pvap(T, Pvap_A, Pvap_B, material)/np.sqrt(2*np.pi*mI*kb*T)*hsub/qe*(mI)
 
    if q_sub>vapor_shielding(Te, hsub, mI, kb, qe, ad, epsilon0, me)*hsub/qe:
@@ -165,6 +186,9 @@ def q_sub(T, Pvap_A, Pvap_B, hsub, mI, kb, qe, ad, Te, epsilon0, me, m_d, cp, ma
    return q_sub
    
 def zeta_drag_n(u, v):
+   """
+   Calculates the neutral drag force
+   """
    #from [Smirnov PPCF 2007]
    if v!=0:
       u = u/v
@@ -176,6 +200,9 @@ def zeta_drag_n(u, v):
    return zeta
    
 def zeta_drag(x, chi, tau, lnLambda):
+   """
+   Calculates the ion drag force 
+   """
    # from [Smirnov PPCF 2007]
    xxp = x**2 + chi/tau
    xxm = x**2 - chi/tau
@@ -192,11 +219,17 @@ def zeta_drag(x, chi, tau, lnLambda):
    return zeta
    
 def eqTemp(y, t, ktemp, qred, x, sw_th, Te, Wf, Pvap_A, Pvap_B, hsub, mI, epsilon_d, Tw, kb, qe, me, h, sigma_SB, ad, epsilon0, m_d, cp, material):
+   """
+   Function to solve temperature equation
+   """
    #all heat fluxes are devided by 4piad^2, units of eV/m^2/s
    dydt = ktemp*(qred - q_sub(y, Pvap_A, Pvap_B, hsub, mI, kb, qe, ad, Te, epsilon0, me, m_d, cp, material) - sw_th*q_th(y, x, Wf, Te, me, kb, h, qe) - q_bb(y, Tw, epsilon_d, sigma_SB, qe))
    return dydt
    
 def eqMass(y, t, td, k1, Pvap_A, Pvap_B, mI, kb, Te, hsub, qe, ad, epsilon0, me, mu, m_d, material):
+   """
+   Function to solve mass equation
+   """
    gamma0 = Pvap(td, Pvap_A, Pvap_B, material)/np.sqrt(2*np.pi*mI*kb*td)*mI
    gamma_vs = vapor_shielding(Te, hsub, mI, kb, qe, ad, epsilon0, me)
 
@@ -207,6 +240,9 @@ def eqMass(y, t, td, k1, Pvap_A, Pvap_B, mI, kb, Te, hsub, qe, ad, epsilon0, me,
    return dydt
    
 def eqMot(y, t, Ni, M, k, mu, Ti, chi, lnLambda, Te, E, kE, A, Zi, Nn, Tn, Mn, mami, qw, fcent1, fcent2, fg):
+   """
+   Function to solve position equation
+   """
    dydt = np.zeros(len(y))
    mid = int(len(y)/2)
    tot_l = int(len(y))
@@ -226,10 +262,17 @@ def eqMot(y, t, Ni, M, k, mu, Ti, chi, lnLambda, Te, E, kE, A, Zi, Nn, Tn, Mn, m
    return dydt
    
 def wall_reflection():
+   """
+   Calculates the new position of a dust when it hits a wall
+   """
    return
    
 def reassamble_dust_results(folder1, folder2, fname0, rd, A):
+   """
+   Reassemble all the dust trajectories in one file and compute the neutral atom source
+   """
    print('Reassembling dust trajectories...')
+   #Determine the shapes of the array that contain all the data
    fname1 = [fich for fich in os.listdir(folder1) if fich.startswith(fname0)]
    ktot = len(fname1)
    lll = np.zeros(ktot, dtype = int)
@@ -238,7 +281,8 @@ def reassamble_dust_results(folder1, folder2, fname0, rd, A):
       lll[k] = np.shape(datak['R'])[1]
       if k==0:
          Nd = datak['Nd']
-
+   
+   #Creation of the arrays
    R1 = np.reshape(np.zeros(ktot*max(lll)), (ktot, max(lll)))*np.nan 
    Z1 = np.reshape(np.zeros(ktot*max(lll)), (ktot, max(lll)))*np.nan
    phi1 = np.reshape(np.zeros(ktot*max(lll)), (ktot, max(lll)))*np.nan
@@ -258,7 +302,8 @@ def reassamble_dust_results(folder1, folder2, fname0, rd, A):
    Rho_d1 = np.reshape(np.zeros(ktot*max(lll)), (ktot, max(lll)))*np.nan
    Cp1 = np.reshape(np.zeros(ktot*max(lll)), (ktot, max(lll)))*np.nan
    dMu = np.reshape(np.zeros(ktot*max(lll)), (ktot, max(lll)))*np.nan
-
+   
+   #Giving the values for each dust trajectory
    for k in range(ktot):
       datak = scio.loadmat(folder1+fname1[k])
       R1[k, :lll[k]] = datak['R']; Z1[k, :lll[k]] = datak['Z']; phi1[k, :lll[k]] = datak['phi'];
@@ -281,26 +326,19 @@ def reassamble_dust_results(folder1, folder2, fname0, rd, A):
       Ed = 0
       print('No electric field, zero everywhere.')
 
-   #for iii in range(np.shape(Mu)[0]):
-   #   aaa = np.squeeze(Mu[iii, :])
-   #   aaa = aaa[~isnan(aaa)]
-   #   Mu_end[iii] = aaa[-1]
-
-   print('Mass lost at the outside of the plasma: '+str(np.nansum(Mu)/np.shape(Mu)[0]*100)+'%') #_end
+   print('Mass lost at the outside of the plasma: '+f"{(1-np.abs(np.nansum(np.diff(Mu))))*100:.4f}"+'%') #_end
    del R1, Z1, phi1, vphi1, vZ1, vR1, Mu1, Nd1, Md1, Td1, Ted1, Tau1, Chi1, Ed1, t1, dead1, Cp1, Rho_d1, k, ktot, datak#, iii, aaa
    
+   #Computing the neutral atom source for all each dust
    NA = 6.02e23
    dt = np.zeros(np.shape(Mu)[1])
- 
    if np.shape(Mu)[1]==1 and np.shape(Mu)[0]>1:
       Mu = np.transpose(Mu)
-      
    for i in range(np.shape(Mu)[0]):
       for it in range(np.shape(Mu)[1]):
          dMu[i, it] = Mu[i, it] - Mu[i, it-1]
          dt[it] = (t[i, it] - t[i, it-1])*rho_s/cs0
    dMu = 1
-
    NAS = - 4/3*np.pi*rd**3*Rho_d*dMu/A*1000*NA/dt
    
    fnameout = folder2+fname0+'.mat'
@@ -309,6 +347,9 @@ def reassamble_dust_results(folder1, folder2, fname0, rd, A):
    return NAS
    
 def outputdata_HFPS():
+   """
+   Generates a file that computes the relevant output for HFPS
+   """
    return 
 
 #Main code
@@ -408,6 +449,7 @@ if __name__ == "__main__":
 	   fieldNi = fieldNi[0,:,:,:] #to not load impurities
 	   print('Impurities excluded.')
 	   
+	#Getting the neutral background
 	try:
 	   fieldNn=fieldNn/n0
 	   fieldTn=fieldTn/T0
@@ -417,6 +459,7 @@ if __name__ == "__main__":
 	except NameError:
 	   print('No neutral density  provided in background plasma. Neutrals excluded.')
 	
+	#Get the nuclei parameters for ion
 	mami = 1 #atom/ion mass ratio
 	if np.shape(fieldNi)[0]==1: #H or D
 	   A = [1]
@@ -427,10 +470,6 @@ if __name__ == "__main__":
 	elif np.shape(fieldNi)[0]==7: #H or D+C
 	   A = [1, 12, 12, 12, 12, 12, 12]
 	   Zi = [1, 1, 2, 3, 4, 5, 6]
-	#elif np.shape(fieldNi)[0]==43: #H or D+W
-	#   A=[1, 184*ones(1,42)]
-	#   Zi=[1, 1:42]
-
 	if mainion=='H':
 	   A[0] = 1
 	elif mainion=='D':
@@ -438,6 +477,7 @@ if __name__ == "__main__":
 	else:
 	   print('Main ion not recongnized/implemented')
 
+	#Access the walls coordinates
 	if fnamewall=='NO':
 	   print('No wall file specified, reflections with wall ignored.')
 	try:
@@ -451,7 +491,7 @@ if __name__ == "__main__":
 	epsilon0 = 8.8542e-12
 	mi = A[0]*1.67e-27
 	me = 9.1094e-31
-	Tw = 300 #350K pour le divertor activement refroidit de WEST ???
+	Tw = 300 #340K pour le divertor activement refroidit de WEST ???
 	qe = 1.6022e-19
 	B0 = 1
 	g_T = 9.81
@@ -503,7 +543,7 @@ if __name__ == "__main__":
 	   fieldEZ = fieldEZ/T0*rho_s
 	   fieldEphi = fieldEphi/T0*rho_s
 	except NameError:
-		pass
+	   pass
 
 	#initialization: giving the right thermodynamical values for each material
 	if material=='C':
@@ -536,8 +576,8 @@ if __name__ == "__main__":
 	   Pvap_A = -45100
 	   Pvap_B = 12.85
 	   mI = 183.84*1.67e-27
-	   rho_d=19300 
-	   cp = 208
+	   rho_d = 19300 
+	   cp = 132
 	   Wf = 4.55
 	   heb = 4480000
 	   hsub = 4670000
@@ -602,7 +642,7 @@ if __name__ == "__main__":
 	sw_REC = 0
     
 	#Set of adimensionned dust potential
-	x = np.linspace(-8,3,5000)
+	x = np.linspace(-8, 3, 5000)
 	HeavisideX = np.heaviside(x, 1)
 	HeavisidemX = np.heaviside(-x, 1)
     
@@ -639,17 +679,15 @@ if __name__ == "__main__":
 	#La danse commence...
 	print('Computing dust dynamics...')
   
-	#initialisation of the number of trajectories with phi_or_t
-	if phi_or_t==1: #change initial toroidal position
+	#initialisation of the number of trajectories with phi_or_t : 
+	if phi_or_t==1: #change initial toroidal position for 2 tests and 4 for testing several directions
 	   kkktot = len(meshphi)
 	elif phi_or_t==2 and np.shape(fieldNe)[1]==1:
 	   kkktot = 1
 	elif phi_or_t==2 or phi_or_t==3:  #change initial time, or both, randomly
 	   kkktot = 1000
-	   #rng('shuffle')
 	elif phi_or_t==4:  #random initial velocity direction
 	   kkktot = 500
-	   #rng('shuffle')
 	elif phi_or_t==5: #scan R,phi position where plasma is actually there        
 	   n1 = np.squeeze(np.nansum(np.squeeze(fieldNe))[1])
 	   N = 10 #resampling in R because too many points
@@ -667,6 +705,7 @@ if __name__ == "__main__":
 	if NKU==np.inf or test:
 	   kkktot=1
     
+	#solve for each dust
 	for kkk in range(kkktot):
 	   if NKU==np.inf or test:
 	      kkk = 1
@@ -751,6 +790,8 @@ if __name__ == "__main__":
 	      del t, R, vR, Z, vZ, phi, vphi, Chi, Qw, Rd, Tau, Td, Mu, ITHd, IRd, IZd, IPHId, Nd, Ted, Md, ERd, EZd, Ephid, Fi, FE, dead, MTOR, LNLAMBDA
 	   except NameError:
 	      pass
+	   
+	   #Initialisation of the vectors containing the computed data
 	   Ntmax = 400000
 	   R = np.zeros(Ntmax)*np.nan
 	   t = np.zeros(Ntmax)*np.nan
@@ -805,10 +846,12 @@ if __name__ == "__main__":
 	         phi[it] = x0[2]
 	         vphi[it] = v0[2]
 	         Chi[it] = 3 #-log(4*pi*me/mi*(1+5/3*Ti/Te))/2
-	         Qw[it] = -1E-11 #4*pi*epsilon0*4*pi*epsilon0*ad*(1+ad/lDtot)*Chi(it)*Te; 
+	         Cp[it] = cp
+	         Rho_d[it] = rho_d
+	         Qw[it] = -1E-11 #- 4*np.pi*epsilon0*ad*(1+ad/lDtot)*Chi[it]*Te
 	         Rd[it] = rd
 	         Tau[it, :] = np.ones(len(A))
-	         Td[it] = 300 #%340K pour le divertor activement refroidit de WEST ???
+	         Td[it] = 300 
 	         mu = 1
 	         Mu[it] = mu
 	         IPHId[it] = (np.abs(meshphi - x0[2])).argmin()
@@ -963,8 +1006,8 @@ if __name__ == "__main__":
 	      qIBSp = sw_BS*RE*qip
 	      qIBSn = sw_BS*RE*qin
 	      #Techniquement à mettre dans l'équation de la chaleur mais la correction est faible (qq %)
-	      qRECp = sw_REC*(1-RN)*Iip*cs0*Ne*n0/4*((E_rec+Emol)*qe-kb*T) 
-	      qRECn = sw_REC*(1-RN)*Iin*cs0*Ne*n0/4*((E_rec+Emol)*qe-kb*T) 
+	      qRECp = sw_REC*(1-RN)*Iip*cs0*Ne*n0/4*((E_rec+E_mol)*qe-kb*T) 
+	      qRECn = sw_REC*(1-RN)*Iin*cs0*Ne*n0/4*((E_rec+E_mol)*qe-kb*T) 
                 
 	      #Totatal heat flux/4pia^2 excluding the terms depending on Td
 	      qred = (q_currp-q_seep-qEBS-qIBSp+qRECp)*HeavisideX + (q_currn-q_seen-qEBS-qIBSn+qRECn)*HeavisidemX
@@ -1042,7 +1085,7 @@ if __name__ == "__main__":
                 
                 
 	      #solve for dust trajectory
-	      fcent1 = [0, 0, - vphi[it]*vR[it]/R[it]]
+	      fcent1 = [0, 0, - 2*vphi[it]*vR[it]/R[it]]
 	      fcent2 = [vphi[it]**2, 0, 0]
 	      fg = [0, - kg, 0]
 	      
@@ -1173,17 +1216,30 @@ if __name__ == "__main__":
 	print('Plotting dust trajectory...')
 	plt.figure(figsize=(5, 5))
 	fontsize = 8
-
-	plt.imshow(np.squeeze(fieldTe), cmap = 'turbo')
+	
+	#image of the electronic temperature background
+	plt.imshow(np.squeeze(fieldTe*T0), cmap = 'turbo', origin = 'lower')
+	plt.colorbar(cmap = 'turbo', label = r"$T_e$ [eV]")
+	
+	#Adding dust trajectories
 	data = scio.loadmat(folder2+fname0+'.mat')
 	R = data['R']
 	Z = data['Z']
-	#meshR*rho_s, meshZ*rho_s, 
-	#Trouver la position la plus proche dans la grille de chaque point
+	nb_ligns_R = np.shape(R)[0]
+	nb_rows_R = np.shape(R)[1]
+	R_im = np.reshape(np.zeros(nb_ligns_R*nb_rows_R), (nb_ligns_R, nb_rows_R))
+	Z_im = np.reshape(np.zeros(nb_ligns_R*nb_rows_R), (nb_ligns_R, nb_rows_R))
+	for i in range(np.shape(R)[0]):
+	   for j in range(np.shape(R)[1]):
+	      try:
+	         R_im[i, j] = (np.abs(meshR[:, 0] - R[i, j])).argmin()
+	         Z_im[i, j] = (np.abs(meshZ[0, :] - Z[i, j])).argmin()
+	         j_max = j
+	      except IndexError:
+	         break
+	   plt.plot(R_im[i, :j_max], Z_im[i, :j_max], color = 'gray', linewidth = 2.5, label = f"Dust number {i+1}")
 	
-	R_im = np.array([10,25,50])
-	Z_im = np.array([10,25,50])
-	plt.plot(R_im, Z_im, color = 'gray', linewidth = 5)
+	#Plot the legends and all things to improve it 
 	try:
 	   plt.plot(Rwall, Zwall, color = 'black', linewidth = 5)
 	except NameError:
@@ -1191,7 +1247,12 @@ if __name__ == "__main__":
 	plt.axis('equal')
 	plt.xlabel('R (m)', fontsize = fontsize)
 	plt.ylabel('Z (m)', fontsize = fontsize)
+	pos = np.array([25, 75, 125, 175, 225, 275])
+	plt.xticks(pos, [f"{meshR[i, 0]*rho_s:.2f}" for i in pos], fontsize = fontsize)
+	plt.yticks(pos, [f"{meshZ[0, i]*rho_s:.3f}" for i in pos], fontsize = fontsize)
+	plt.legend()
 	plt.show(block=False)
 	
+	print('DUMBO flies freely toward the sky !')
 	print('*******************************************')
 	print('*******************************************')
