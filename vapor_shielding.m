@@ -17,5 +17,5 @@ Gammak = 2*pi*ad^2*kappae*qe*Te/(Eev*sqrt(ad*RM));
 Gamma0 = 4*pi*ad*(Ted)^3/(me*Kew*IW*Eev);
 
 %Particule flux
-Gamma_vs = Gamma0^(3/5)*Gammak^(2/5)/alphaL^(1/5)*mI*1e50;
+Gamma_vs = Gamma0^(3/5)*Gammak^(2/5)/alphaL^(1/5)*mI;
 end

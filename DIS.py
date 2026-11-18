@@ -153,7 +153,7 @@ def vapor_shielding(Te, hsub, mI, kb, qe, ad, epsilon0, me):
    Gamma0 = 4*np.pi*ad*(Ted)**3/(me*Kew*IW*Eev)
 
    #Particule flux
-   Gamma_vs = Gamma0**(3/5)*Gammak**(2/5)/alphaL**(1/5)*mI*1e50
+   Gamma_vs = Gamma0**(3/5)*Gammak**(2/5)/alphaL**(1/5)*mI
    return Gamma_vs
 
 def q_th(T, x, Wf, Te, me, kb, h, qe):
@@ -181,7 +181,7 @@ def q_sub(T, Pvap_A, Pvap_B, hsub, mI, kb, qe, ad, Te, epsilon0, me, m_d, cp, ma
    """
    q_sub = Pvap(T, Pvap_A, Pvap_B, material)/np.sqrt(2*np.pi*mI*kb*T)*hsub/qe*(mI)
 
-   if q_sub>vapor_shielding(Te, hsub, mI, kb, qe, ad, epsilon0, me)*hsub/qe:
+   if False: #q_sub>vapor_shielding(Te, hsub, mI, kb, qe, ad, epsilon0, me)*hsub/qe:
       q_sub = vapor_shielding(Te, hsub, mI, kb, qe, ad, epsilon0, me)*hsub/qe/m_d/cp
    return q_sub
    
@@ -233,7 +233,7 @@ def eqMass(y, t, td, k1, Pvap_A, Pvap_B, mI, kb, Te, hsub, qe, ad, epsilon0, me,
    gamma0 = Pvap(td, Pvap_A, Pvap_B, material)/np.sqrt(2*np.pi*mI*kb*td)*mI
    gamma_vs = vapor_shielding(Te, hsub, mI, kb, qe, ad, epsilon0, me)
 
-   if gamma0<gamma_vs:
+   if True: #gamma0<gamma_vs:
       dydt = - Pvap(td, Pvap_A, Pvap_B, material)/np.sqrt(2*np.pi*mI*kb*td)*k1*y**(2/3)
    else:
       dydt = - gamma_vs/m_d*rho_s/cs0
