@@ -99,11 +99,11 @@ def cp_func(material, td, meltT, boilT):
 
    if material=='C':
        cpT = td
-       cp = (CP[1] + CP[2]*cpT + CP[3]*(cpT)**-1 + CP[4]*(cpT)**-2 + CP[5]*(cpT)**-3 +CP[6]*(cpT)**-4) #function for boron
+       cp = (CP[0] + CP[1]*cpT + CP[1]*(cpT)**-1 + CP[3]*(cpT)**-2 + CP[4]*(cpT)**-3 +CP[5]*(cpT)**-4) #function for boron
    elif material!='W':
        hsub = 508*1e3/10.811e-3
        cpT = td/1000
-       cp = (CP[1] + (CP[2]*cpT) + (CP[3]*(cpT)**2) + (CP[4]*(cpT)**3) + (CP[5]/(cpT**2)))/(mmol*1e-3) #function for boron
+       cp = (CP[0] + (CP[1]*cpT) + (CP[2]*(cpT)**2) + (CP[3]*(cpT)**3) + (CP[4]/(cpT**2)))/(mmol*1e-3) #function for boron
 
    return rho_d, cp, hsub
 
@@ -559,8 +559,9 @@ if __name__ == "__main__":
 	   boilT = 3925
 	   meltT = 1e6
 	elif material=='B':
-	   Pvap_A=-28238
-	   mI=10.8*1.67e-27
+	   Pvap_A = -28238
+	   Pvap_B = 11.98
+	   mI = 10.8*1.67e-27
 	   rho_d = 2080
 	   rho_d = 2340
 	   cp = 11.087/10.811e-3
