@@ -76,7 +76,7 @@ elseif strcmp(material,'C') %Butland JNM 1973
 
    CP=[0.539 9.11e-6 -90.27 -43449 1.59e7 -1.4437e9];%Butland JNM 1973 cal/g/K
    CP=CP*4.1868*1000;%J/K/kg
-        
+   hsub = 2.97e7;     
     
     
 else

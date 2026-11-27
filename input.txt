@@ -1,7 +1,7 @@
 % dust radius [m]
 25e-6
 % dust material. Implemented: Li, B, C, BN, B4C
-B
+C
 % initial position x0 [R Z phi], m, phi in rad
 1.566  0.215     0
 % initial velocity v0 [vR vZ vphi], m/s

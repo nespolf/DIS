@@ -655,7 +655,7 @@ end
                 if Td(it)<=boilT && td>=boilT
                     disp('The dust is boiling...')
                     qboil=(m_d*mu/4/pi).^(2/3)*(rho_d/3)^1/3*hsub*(1-Psiboil(it));
-                    [ts,td] = ode45(@(t,y) eqTemp(t,y,ktemp,qred-qboil,chi,sw_th,Te.*T0,Wf,Pvap_A,Pvap_B,hsub,mI,epsilon_d,Tw,kb,qe,me,h,sigma_SB,ad,epsilon0,m_d,cp),[0,dt/2,dt],[Td(it)]);
+                    [ts,td] = ode45(@(t,y) eqTemp(t,y,ktemp,qred-qboil,chi,sw_th,Te.*T0,Wf,Pvap_A,Pvap_B,hsub,mI,epsilon_d,Tw,kb,qe,me,h,sigma_SB,ad,epsilon0,m_d,cp,material),[0,dt/2,dt],[Td(it)]);
                     td=td(end); psiboil=1;
                     if td<=boilT
                         td=boilT;
